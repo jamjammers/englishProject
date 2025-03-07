@@ -1,5 +1,5 @@
 import re
-
+import warnings
 from textblob import TextBlob
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import matplotlib.pyplot as plt
@@ -161,6 +161,24 @@ class Text:
 
 # — is 2 word, - is 1 word
 
+def replaceTags(text):
+        str = ""
+        char = ""
+        index = 0
+        while(index<len(text)):
+            while(index<len(text)):
+                char = text[index]
+                index+=1
+                if(char == "<"):
+                    break
+                str+=char
+            while(index<len(text)):
+                char = text[index]
+                index+=1
+                if(char == ">"):
+                    break
+        return str
+
 # I'm debating on whether or not I want to remove the hr and p tags
 class HTML:
     file = None
@@ -170,7 +188,26 @@ class HTML:
     backlog = ""
     def __init__(self, file):
         self.file = file
-    
+
+    def nextBreak(self):
+        str = self.__nextBreak()
+        # elimiate excess whitespace (newlines, tabs, multiple spaces)
+        str = str.replace("\n\n", "¡£çß¥∫ˆ¨∫ß∂˙ß∫ß∫ß∆ß∫ß˙∆∫ß∫ß") #temporarily store paragraph changes
+        str = str.replace("\n", " ")
+        str = str.replace("¡£çß¥∫ˆ¨∫ß∂˙ß∫ß∫ß∆ß∫ß˙∆∫ß∫ß", "\n\n")
+        str = str.replace("\t", " ")
+        str = replaceTags(str)
+        str = re.sub(r'[ ]+', ' ', str)
+        return str
+
+    def __nextBreak(self):
+        str = ""
+        while(True):
+            str+=self.nextChar()
+            if("<hr" in str or "<p></p>" in str):
+                break
+        return str
+
     def endOfParagraph(self):
         str = self.__endOfParagraph()
         # elimiate excess whitespace (newlines, tabs, multiple spaces)
@@ -219,7 +256,6 @@ class HTML:
         str = ""
         while(str == "" or str == " "):
             str = self.__nextSentence().strip()
-            print(str)
             # elimiate excess whitespace (newlines, tabs, multiple spaces)
             str = str.replace("\n", " ")
             str = str.replace("\t", " ")
@@ -242,7 +278,6 @@ class HTML:
                 else:
                     break
             if str == "<p>" or str == "</p>":
-                print("rs",str)
                 str = ""
             elif char in self.endSentence:
                 break
@@ -269,57 +304,112 @@ class HTML:
     def nextChar(self):
         return self.file.read(1)
 
+##configuring values (use these to turn of certain outputs)
+printSentences = False
+printParagraphs = False
+plotSentences = False
+plotParagraphs = True
 
 text = Text(open(r"DallowayJustText.txt", "r"))   
 analysis = SentimentAnalysis()    
+sentenceHTML = HTML(open(r"Dalloway.html", "r"))
+paragraphHTML = HTML(open(r"Dalloway.html", "r"))
 
-html = HTML(open(r"Dalloway.html", "r"))
-xAxis = []
-VaderCompoundY = []
-wordCountY = []
+breakHTML = HTML(open(r"Dalloway.html", "r"))
+
+print(breakHTML.nextBreak())
+
+sentenceX = []
+sentenceVaderCompound = []
+sentenceWordCount = []
+
+#for each sentence
 for i in range(10000):
-    sentence = html.nextSentence()
-    analysis.print(sentence)
-    print(formatCodes.BOLD+formatCodes.GRAY+
-        "\n------------------------------------------------\n"+
-        formatCodes.ENDC)
-    xAxis.append(i)
-    VaderCompoundY.append(analysis.vader(sentence)['compound']+1)
-    wordCountY.append(len(sentence.split(" ")))
+    sentence = sentenceHTML.nextSentence()
+    
+    if(printSentences):
+        analysis.print(sentence)
+        print(formatCodes.BOLD+formatCodes.GRAY+
+            "\n------------------------------------------------\n"+
+            formatCodes.ENDC)
+    
+    sentenceX.append(i)
+    sentenceVaderCompound.append(analysis.vader(sentence)['compound']+1)
+    sentenceWordCount.append(len(sentence.split(" ")))
     if("For there she was" in sentence):
         break
-# print("end")
-# x axis values
 
-# labels for bars
+paragraphX = []
+paragraphVaderCompound = []
+paragraphWordCount = []
 
-# plotting a bar chart
-plt.bar(xAxis, VaderCompoundY,
-        width = 1)
+#TODO: paragraph sentence count (split by punctuation but not if title [subtract for each title?])
+# for each para
+for i in range(10000):
+    paragraph = paragraphHTML.nextSentence()
+    
+    if(printParagraphs):
+        analysis.print(paragraph)
+        print(formatCodes.BOLD+formatCodes.GRAY+
+            "\n------------------------------------------------\n"+
+            formatCodes.ENDC)
+    
+    paragraphX.append(i)
+    paragraphVaderCompound.append(analysis.vader(paragraph)['compound']+1)
+    paragraphWordCount.append(len(paragraph.split(" ")))
+    if("For there she was" in paragraph):
+        break
+####PLOTS
 
-# naming the x-axis
-plt.xlabel('sentence in the book')
-# naming the y-axis
-plt.ylabel('text blob judged polarity from 0 to 2')
-# plot title
-plt.title('Vader Compound Through out the first '+str(len(xAxis))+' sentences')
-# set upper and lower bounds
-plt.ylim(0, 2)
-plt.xlim(0, len(xAxis))
-# function to show the plot
-plt.show()
+### sentence
+if(plotSentences):
+    ## VADER PLOT
+    plt.bar(sentenceX, sentenceVaderCompound, width= 1, color="black")
 
-plt.bar(xAxis, wordCountY,
-        width = 1)
+    plt.title('Vader Compound (Sentences)')
+    plt.xlabel('Sentence')
+    plt.ylabel('Vader polarity from 0 to 2')
 
-# naming the x-axis
-plt.xlabel('sentence in the book')
-# naming the y-axis
-plt.ylabel('sentence length')
-# plot title
-plt.title('text length Through out the first '+str(len(xAxis))+' sentences')
-# set upper and lower bounds
-# plt.ylim(0, 2)
-plt.xlim(0, len(xAxis))
-# function to show the plot
-plt.show()
+    plt.ylim(0, 2)
+    plt.xlim(0, len(sentenceX))
+
+    plt.show()
+
+
+    ## text length plot
+    plt.bar(sentenceX, sentenceWordCount,width = 1, color = "black")
+
+    plt.title('Word Count (Sentences)')
+    plt.xlabel('Sentence')
+    plt.ylabel('Word Count')
+
+    plt.xlim(0, len(sentenceX))
+
+    plt.show()
+
+if(plotParagraphs):
+    ### paragraph
+
+    ## VADER PLOT
+    plt.bar(paragraphX, paragraphVaderCompound, width= 1, color = "black")
+
+    plt.title('Vader Compound (Paragraphs)')
+    plt.xlabel('Paragraph')
+    plt.ylabel('Vader polarity from 0 to 2')
+
+    plt.ylim(0, 2)
+    plt.xlim(0, len(paragraphX))
+
+    plt.show()
+
+
+    ## text length plot
+    plt.bar(paragraphX, paragraphWordCount,width = 1, color="black")
+
+    plt.title('Word Count (Paragraphs)')
+    plt.xlabel('Paragraph')
+    plt.ylabel('Word Count')
+
+    plt.xlim(0, len(paragraphX))
+
+    plt.show()
