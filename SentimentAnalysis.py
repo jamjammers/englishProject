@@ -1,8 +1,9 @@
 import re
-import warnings
 from textblob import TextBlob
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import matplotlib.pyplot as plt
+import os
+os.system('clear')
 class formatCodes:
     RED = '\033[91m'
     YELLOW = '\033[93m'
@@ -179,7 +180,25 @@ def replaceTags(text):
                     break
         return str
 
-# I'm debating on whether or not I want to remove the hr and p tags
+def terminalFormat(text):
+    str = ""
+    diff = 0
+    prev = 0
+    index=0
+    diff=0
+    width=os.get_terminal_size().columns
+    while (" " in text[index:]):
+        prev = index
+        index = text.find(" ", index+1)
+        if(index > width+diff):
+            str += text[diff:prev] + "\n"
+            index = prev
+            diff = index+1
+    str += text[diff:]
+        
+    return str
+
+# I'm debating on whether or not I want to remove the hr and p tags   i will not
 class HTML:
     file = None
     titles = ["Mrs.", "Mr.", "Dr."] # these are the only ones that I found.
@@ -308,7 +327,7 @@ class HTML:
 printSentences = False
 printParagraphs = False
 plotSentences = False
-plotParagraphs = True
+plotParagraphs = False
 
 text = Text(open(r"DallowayJustText.txt", "r"))   
 analysis = SentimentAnalysis()    
@@ -316,8 +335,6 @@ sentenceHTML = HTML(open(r"Dalloway.html", "r"))
 paragraphHTML = HTML(open(r"Dalloway.html", "r"))
 
 breakHTML = HTML(open(r"Dalloway.html", "r"))
-
-print(breakHTML.nextBreak())
 
 sentenceX = []
 sentenceVaderCompound = []
