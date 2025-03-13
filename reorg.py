@@ -1,6 +1,7 @@
 import re
-from textblob import TextBlob
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from textblob import TextBlob
+
 import matplotlib.pyplot as plt
 import os
 from SentimentAnalysis import SentimentAnalysis
@@ -68,5 +69,6 @@ for reg in re.finditer(r"((?<!Dr)(?<!Mrs)(?<!Mr)(?<!\.)\.|!|\?)( |\n|<)", cleanT
     analysis.print(text)
 
     prevEnd = end
+wordArray = re.sub(r"[^qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM-]",re.split(r"[ —]", cleanText))
 
 # print(sentenceArray)
