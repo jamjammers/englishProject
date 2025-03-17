@@ -53,20 +53,142 @@ cleanText = re.sub(r'[ ]+', ' ', cleanText)
 output = open("cleanedText.txt", "w")
 # output.write(cleanText)
 
-sentenceArray = re.split(r"((?<!Dr)(?<!Mrs)(?<!Mr)(?<!\.)\.|!|\?)( |\n|<)",cleanText)
-output.write("\n\n".join(sentenceArray))
-
-prevEnd = 0
-for reg in re.finditer(r"((?<!Dr)(?<!Mrs)(?<!Mr)(?<!\.)\.|!|\?)( |\n|<)", cleanText):
-    # print(reg.span()) 
-    start, end = reg.span()
-    # print(cleanText[prevEnd:end])
-    text = cleanText[prevEnd:end]
+wordArray = re.split(r"[ —]", cleanText)
+temp = []
+for i in range(len(wordArray)):
+    text = wordArray[i]
+    text = re.sub(r'[^qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM-]', '', text)
 
     text = text.replace("\n", " ").strip()
     text = re.sub(r'[ ]+', ' ', text)
-    analysis.print(text)
+    if(text != ""):
+        temp.append(text)
+wordArray = temp
 
-    prevEnd = end
+#sentence
 
-# print(sentenceArray)
+sentenceArray = []
+prevEnd = 0
+quote = False
+temp = ""
+for reg in re.finditer(r"((?<!Dr)(?<!Mrs)(?<!Mr)(?<!\.)\.|!|\?)( |\n|<)", cleanText):
+    start, end = reg.span()
+    if("“" in cleanText[prevEnd:end] and "”" not in cleanText[prevEnd:end]):
+        quote = True
+        temp = cleanText[prevEnd:end]
+        continue
+    elif(quote and "”" in cleanText[prevEnd:end]):
+        temp = cleanText[prevEnd:end]
+
+        quote = False
+        text = temp
+        text = text.replace("\n", " ").strip()
+        text = re.sub(r'[ ]+', ' ', text)
+        sentenceArray.append(text)
+        temp=""
+        prevEnd = end
+    elif(not(quote)):
+        text = cleanText[prevEnd:end]
+        text = text.replace("\n", " ").strip()
+        text = re.sub(r'[ ]+', ' ', text)
+        sentenceArray.append(text)
+        prevEnd = end
+
+##FREQ
+showFrequency = False
+if(showFrequency):
+    wordFreq = {}
+    for word in wordArray:
+        word = word.lower()
+        if(word not in wordFreq.keys()):
+            wordFreq[word] = 1
+        else:
+            wordFreq[word] += 1
+
+    sortDict = dict(sorted(wordFreq.items(), key=lambda item: -item[1]))
+    print(sortDict)
+    for(word, count) in sortDict.items():
+        output.write(word + ": " + str(count) + "\n")
+
+##EDGE FOR SENTIMENT
+showExtremeSentiment = False
+if(showExtremeSentiment):
+    print(sentenceArray)
+    output.write("\n\n".join(sentenceArray))
+    for sentence in sentenceArray:
+        sentiment = analysis.vader(sentence)['compound']
+        if(abs(sentiment) > 0.75):
+            output.write(sentence + "\nSentiment: "+str(sentiment)+"\n\n")
+
+##min max for sentiment
+showMinMaxSentiment = False
+if(showMinMaxSentiment):
+    high, low, neutral, total, bigHigh, bigLow = 0,0,0,0, 0, 0
+    for sentence in sentenceArray:
+        sentiment = analysis.vader(sentence)['compound']
+        if((sentiment) > 0):
+            high+=1
+            if(sentiment >= 0.75):
+                bigHigh+=1
+        elif((sentiment) < 0):
+            low+=1
+            if(sentiment <= -0.75):
+                bigLow+=1
+        else:
+            neutral+=1
+        total+=1
+    print("High: ", high, "\nLow: ", low, "\nNeutral: ", neutral, "\nTotal: ", total)
+    print("Big High: ", bigHigh, "\nBig Low: ", bigLow)
+
+
+##sentiment bar chart
+showSentimentBarChart = False
+if(showSentimentBarChart):
+    sentimentX = []
+    sentimentY = []
+    i = 0
+    for sentence in sentenceArray:
+        i+=1
+        sentimentX.append(i)
+
+        sentimentY.append(analysis.vader(sentence)['compound'])
+    plt.bar(sentimentX, sentimentY, width = 1, color = "black")
+
+    plt.title('Polarity of Sentiment Analysis (Sentences)')
+    plt.xlabel('Sentence')
+    plt.ylabel('Polarity')
+
+    plt.xlim(0, len(sentimentX))
+    plt.ylim(-1,1)
+    plt.show()
+
+##sentiment without quotes
+showSentimentNoQuotes = True
+if(showSentimentNoQuotes):
+    pos, neg, neu, total, bigPos, bigNeg = 0,0,0,0, 0, 0
+    for sentence in sentenceArray:
+        if not("“" in sentence or "”" in sentence):
+            polarity = analysis.vader(sentence)['compound']
+            if(polarity > 0):
+                pos+=1
+                if(polarity >= 0.75):
+                    bigPos+=1
+            elif(polarity < 0):
+                neg+=1
+                if(polarity <= -0.75):
+                    bigNeg+=1
+            else:
+                neu+=1
+            total+=1
+    print("Positive: ", pos, "\nNegative: ", neg, "\nNeutral: ", neu, "\nTotal: ", total)
+    print("Big Positive: ", bigPos, "\nBig Negative: ", bigNeg)
+
+
+
+
+
+
+
+
+
+

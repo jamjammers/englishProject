@@ -107,19 +107,19 @@ class SentimentAnalysis:
         out+=" Sentiment Analysis"+"\n"
         out+="  TextBlob:"
 
-        out+="   polarity:     "+str(analysis.polarity(text))+"\n"
+        out+="   polarity:     "+holdstr(analysis.polarity(text))+"\n"
 
-        out+="   subjectivity: "+str(analysis.subjectivity(text))+"\n"
+        out+="   subjectivity: "+holdstr(analysis.subjectivity(text))+"\n"
 
         out+="  VADER:"+"\n"
 
-        out+="   positive:     "+str(analysis.vader(text)['pos'])+"\n"
+        out+="   positive:     "+holdstr(analysis.vader(text)['pos'])+"\n"
 
-        out+="   neutral:      "+str(analysis.vader(text)['neu'])+"\n"
+        out+="   neutral:      "+holdstr(analysis.vader(text)['neu'])+"\n"
 
-        out+="   negative:     "+str(analysis.vader(text)['neg'])+"\n"
+        out+="   negative:     "+holdstr(analysis.vader(text)['neg'])+"\n"
 
-        out+="   compound:     "+str(analysis.vader(text)['compound'])+"\n"
+        out+="   compound:     "+holdstr(analysis.vader(text)['compound'])+"\n"
         return out
 
 class Text:
@@ -477,37 +477,51 @@ total = []
 
 outputFile = open(r"output.txt", "w")
 
+dialoges = []
 diaX = []
 diaVaderCompound = []
 i=0
+
 numHigh = 0
 numLow = 0
+bigHigh, bigLow = 0,0
+# quotes things
 for char in text:
     if(start):
         if(char == "”"):
             current += char
-            str = current.replace("\n", " ")
-            str = str.replace("\t", " ")
-            str = str.replace("<p>", "")
-            str = str.replace("</p>", "")
-            str = re.sub(r'[ ]+', ' ', str)
-            total.append(str)
+            holdstr = current.replace("\n", " ")
+            holdstr = holdstr.replace("\t", " ")
+            holdstr = holdstr.replace("<p>", "")
+            holdstr = holdstr.replace("</p>", "")
+            holdstr = re.sub(r'[ ]+', ' ', holdstr)
+            total.append(holdstr)
             i+=1
-            if(analysis.vader(str)['compound']>0):
+            if(analysis.vader(holdstr)['compound']>0):
                 numHigh+=1
-            elif(analysis.vader(str)['compound']<0):
+                if(analysis.vader(holdstr)['compound']>=0.75):
+                    bigHigh+=1
+            elif(analysis.vader(holdstr)['compound']<0):
                 numLow+=1
+                if(analysis.vader(holdstr)['compound']<=-0.75):
+                    bigLow+=1
             diaX.append(i)
-            diaVaderCompound.append(analysis.vader(str)['compound'])
+            dialoges.append(holdstr)
+            diaVaderCompound.append(analysis.vader(holdstr)['compound'])
             start = False
         else:
             current += char
     elif(char == "“"):
         start = True
         current = char
+for dia in dialoges:
+    withQuotes = analysis.vader(dia)['compound']
+    withoutQuotes = analysis.vader(dia.replace("“", "").replace("”", ""))['compound']
+    # outputFile.write("artificial increase: "+str(withQuotes-withoutQuotes)+"\n\n")
 outputFile.write("\n\n".join(total))
 file.close()
-print("numHigh: ", numHigh, "numLow: ", numLow, "total: ", i)
+print("numHigh: ", numHigh, "\nnumLow: ", numLow, "\ntotal: ", i)
+print("bigHigh: ", bigHigh, "\nbigLow: ", bigLow)
 if(plotDia):
     ### paragraph
 
@@ -528,23 +542,10 @@ if seeSentence:
     sentence = input("Enter Sentence:")
     analysis.print(sentence)
 
-
-
 ####PLOTS
 
 ### sentence
 if(plotSentences):
-    ## VADER PLOT
-    plt.bar(sentenceX, sentenceVaderCompound, width= 1, color="black")
-
-    plt.title('Vader Compound (Sentences)')
-    plt.xlabel('Sentence')
-    plt.ylabel('Vader polarity from 0 to 2')
-
-    plt.ylim(0, 2)
-    plt.xlim(0, len(sentenceX))
-
-    plt.show()
 
 
     ## text length plot
