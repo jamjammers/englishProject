@@ -1,6 +1,7 @@
 import re
-from textblob import TextBlob
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from textblob import TextBlob
+
 import matplotlib.pyplot as plt
 import os
 from SentimentAnalysis import SentimentAnalysis
@@ -189,6 +190,5 @@ if(showSentimentNoQuotes):
 
 
 
-
-
-
+    prevEnd = end
+wordArray = re.sub(r"[^qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM-]",re.split(r"[ —]", cleanText))
