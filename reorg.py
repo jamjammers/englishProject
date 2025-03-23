@@ -54,6 +54,7 @@ cleanText = re.sub(r'[ ]+', ' ', cleanText)
 output = open("cleanedText.txt", "w")
 # output.write(cleanText)
 
+
 wordArray = re.split(r"[ —]", cleanText)
 temp = []
 for i in range(len(wordArray)):
@@ -164,7 +165,7 @@ if(showSentimentBarChart):
     plt.show()
 
 ##sentiment without quotes
-showSentimentNoQuotes = True
+showSentimentNoQuotes = False
 if(showSentimentNoQuotes):
     pos, neg, neu, total, bigPos, bigNeg = 0,0,0,0, 0, 0
     for sentence in sentenceArray:
@@ -184,11 +185,17 @@ if(showSentimentNoQuotes):
     print("Positive: ", pos, "\nNegative: ", neg, "\nNeutral: ", neu, "\nTotal: ", total)
     print("Big Positive: ", bigPos, "\nBig Negative: ", bigNeg)
 
+##polar non-quote count
+showPolarNonquote = True
+if(showPolarNonquote):
+    polarQ, npolarQ, polarNQ, npolarNQ = 0, 0, 0, 0
+    for sentence in sentenceArray:
+        polar = abs(analysis.vader(sentence)['compound'])>=0.75
+        quote = "“" in sentence or "”" in sentence
+        polarQ += polar and quote
+        npolarQ += not(polar) and quote
+        polarNQ += polar and not(quote)
+        npolarNQ += not(polar) and not(quote)
+    print("Polar Quote: ", polarQ, "\nNon-Polar Quote: ", npolarQ, "\n")
+    print("Polar Non-Quote: ", polarNQ, "\nNon-Polar Non-Quote: ", npolarNQ)
 
-
-
-
-
-
-    prevEnd = end
-wordArray = re.sub(r"[^qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM-]",re.split(r"[ —]", cleanText))
